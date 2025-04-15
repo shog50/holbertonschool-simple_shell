@@ -3,20 +3,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
 /**
- * run_shell - runs a simple shell loop
+ * run_shell - executes the shell loop
  */
 void run_shell(void)
 {
 char *line = NULL;
 size_t len = 0;
 ssize_t nread;
-pid_t child_pid;
-char *argv[64];
-int i;
+pid_t pid;
 
 while (1)
 {
@@ -29,7 +26,7 @@ if (nread == -1)
 free(line);
 if (isatty(STDIN_FILENO))
 write(STDOUT_FILENO, "\n", 1);
-exit(0);
+break;
 }
 
 if (line[nread - 1] == '\n')
@@ -41,33 +38,25 @@ free(line);
 exit(0);
 }
 
-i = 0;
-argv[i] = strtok(line, " ");
-while (argv[i] != NULL)
-{
-i++;
-argv[i] = strtok(NULL, " ");
-}
-
-if (argv[0] == NULL)
-continue;
-
-child_pid = fork();
-if (child_pid == -1)
+pid = fork();
+if (pid == -1)
 {
 perror("fork");
 continue;
 }
-
-if (child_pid == 0)
+else if (pid == 0)
 {
-if (execve(argv[0], argv, environ) == -1)
+char *args[2];
+args[0] = line;
+args[1] = NULL;
+if (execve(args[0], args, environ) == -1)
 {
-perror(argv[0]);
-exit(EXIT_FAILURE);
+fprintf(stderr, "./hsh: 1: %s: not found\n", args[0]);
+exit(127);
 }
 }
 else
 wait(NULL);
 }
+free(line);
 }
