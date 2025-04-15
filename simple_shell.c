@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "simple_shell.h"
 #include <sys/wait.h> /* For 'wait' function */
 
 #define PROMPT "#cisfun$ "
