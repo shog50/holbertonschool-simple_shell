@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "shell.h"
 
 void run_shell(void)
@@ -14,6 +16,8 @@ pid_t child_pid;
 char *argv[MAX_ARGS];
 char *token;
 int i;
+char *path, *full_path, *dir;
+struct stat st;
 
 while (1)
 {
@@ -50,12 +54,9 @@ token = strtok(NULL, " ");
 }
 argv[i] = NULL;
 
-child_pid = fork();
-if (child_pid == -1)
+if (stat(argv[0], &st) == 0)
 {
-perror("fork");
-continue;
-}
+child_pid = fork();
 if (child_pid == 0)
 {
 if (execve(argv[0], argv, environ) == -1)
@@ -65,8 +66,42 @@ exit(EXIT_FAILURE);
 }
 }
 else
+wait(NULL);
+}
+else
+{
+path = getenv("PATH");
+if (path)
+{
+dir = strtok(path, ":");
+while (dir != NULL)
+{
+full_path = malloc(strlen(dir) + strlen(argv[0]) + 2);
+if (full_path == NULL)
+break;
+sprintf(full_path, "%s/%s", dir, argv[0]);
+if (stat(full_path, &st) == 0)
+{
+child_pid = fork();
+if (child_pid == 0)
+{
+execve(full_path, argv, environ);
+perror(argv[0]);
+exit(EXIT_FAILURE);
+}
+else
 {
 wait(NULL);
+free(full_path);
+break;
+}
+}
+free(full_path);
+dir = strtok(NULL, ":");
+}
+}
+else
+perror(argv[0]);
 }
 }
 }
