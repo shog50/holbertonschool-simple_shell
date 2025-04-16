@@ -39,7 +39,7 @@ line[nread - 1] = '\0';
 if (strcmp(line, "exit") == 0)
 {
 free(line);
-break;
+exit(0);
 }
 
 if (line[0] == '\0')
@@ -73,6 +73,7 @@ else
 path = getenv("PATH");
 if (path)
 {
+path = strdup(path);
 dir = strtok(path, ":");
 while (dir != NULL)
 {
@@ -99,9 +100,11 @@ break;
 free(full_path);
 dir = strtok(NULL, ":");
 }
+free(path);
 }
 else
 perror(argv[0]);
 }
 }
+free(line);
 }
