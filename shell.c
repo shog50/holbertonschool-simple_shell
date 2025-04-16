@@ -1,23 +1,19 @@
+#include "shell.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include "shell.h"
 
 void run_shell(void)
 {
-char *line = NULL;
+char *line = NULL, *token = NULL;
+char *argv[64];
 size_t len = 0;
 ssize_t nread;
 pid_t child_pid;
-char *argv[MAX_ARGS];
-char *token;
 int i;
-char *path, *full_path, *dir;
-struct stat st;
 
 while (1)
 {
@@ -39,31 +35,70 @@ line[nread - 1] = '\0';
 if (strcmp(line, "exit") == 0)
 {
 free(line);
-exit(0);
+return;
 }
 
 if (strcmp(line, "env") == 0)
 {
-for (i = 0; environ[i] != NULL; i++)
-printf("%s\n", environ[i]);
+for (i = 0; environ[i]; i++)
+{
+write(STDOUT_FILENO, environ[i], strlen(environ[i]));
+write(STDOUT_FILENO, "\n", 1);
+}
 continue;
 }
 
-if (line[0] == '\0')
-continue;
-
 i = 0;
 token = strtok(line, " ");
-while (token != NULL && i < MAX_ARGS - 1)
+while (token && i < 63)
 {
 argv[i++] = token;
 token = strtok(NULL, " ");
 }
 argv[i] = NULL;
 
-if (stat(argv[0], &st) == 0)
+if (argv[0] == NULL)
+continue;
+
+if (strchr(argv[0], '/') == NULL)
 {
+char *path = getenv("PATH");
+char *dir = strtok(path, ":");
+char full_path[1024];
+int found = 0;
+
+while (dir)
+{
+snprintf(full_path, sizeof(full_path), "%s/%s", dir, argv[0]);
+if (access(full_path, X_OK) == 0)
+{
+argv[0] = full_path;
+found = 1;
+break;
+}
+dir = strtok(NULL, ":");
+}
+if (!found)
+{
+perror(argv[0]);
+continue;
+}
+}
+else
+{
+if (access(argv[0], X_OK) != 0)
+{
+perror(argv[0]);
+continue;
+}
+}
+
 child_pid = fork();
+if (child_pid == -1)
+{
+perror("fork");
+continue;
+}
 if (child_pid == 0)
 {
 if (execve(argv[0], argv, environ) == -1)
@@ -74,44 +109,6 @@ exit(EXIT_FAILURE);
 }
 else
 wait(NULL);
-}
-else
-{
-path = getenv("PATH");
-if (path)
-{
-path = strdup(path);
-dir = strtok(path, ":");
-while (dir != NULL)
-{
-full_path = malloc(strlen(dir) + strlen(argv[0]) + 2);
-if (full_path == NULL)
-break;
-sprintf(full_path, "%s/%s", dir, argv[0]);
-if (stat(full_path, &st) == 0)
-{
-child_pid = fork();
-if (child_pid == 0)
-{
-execve(full_path, argv, environ);
-perror(argv[0]);
-exit(EXIT_FAILURE);
-}
-else
-{
-wait(NULL);
-free(full_path);
-break;
-}
-}
-free(full_path);
-dir = strtok(NULL, ":");
-}
-free(path);
-}
-else
-perror(argv[0]);
-}
 }
 free(line);
 }
