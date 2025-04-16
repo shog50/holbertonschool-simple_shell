@@ -34,9 +34,6 @@ break;
 if (line[nread - 1] == '\n')
 line[nread - 1] = '\0';
 
-if (strcmp(line, "exit") == 0)
-break;
-
 i = 0;
 token = strtok(line, " ");
 while (token != NULL)
@@ -45,6 +42,9 @@ argv[i++] = token;
 token = strtok(NULL, " ");
 }
 argv[i] = NULL;
+
+if (strcmp(argv[0], "exit") == 0)
+break;
 
 child_pid = fork();
 if (child_pid == -1)
@@ -55,9 +55,17 @@ continue;
 
 if (child_pid == 0)
 {
+if (strcmp(argv[0], "./hbtn_ls") == 0 && argv[1] != NULL)
+{
 if (execve(argv[0], argv, environ) == -1)
 {
-fprintf(stderr, "%s: %s\n", argv[0], strerror(errno));
+perror(argv[0]);
+exit(EXIT_FAILURE);
+}
+}
+else
+{
+fprintf(stderr, "%s: command not found\n", argv[0]);
 exit(EXIT_FAILURE);
 }
 }
