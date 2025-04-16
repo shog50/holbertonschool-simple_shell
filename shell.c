@@ -3,17 +3,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 void run_shell(void)
 {
-char *line = NULL, *token = NULL;
-char *argv[64];
+char *line = NULL, *token = NULL, *path = NULL, *dir = NULL;
+char *argv[64], full_path[1024];
 size_t len = 0;
 ssize_t nread;
 pid_t child_pid;
-int i;
+int i, found;
 
 while (1)
 {
@@ -23,7 +23,6 @@ write(STDOUT_FILENO, "$ ", 2);
 nread = getline(&line, &len, stdin);
 if (nread == -1)
 {
-free(line);
 if (isatty(STDIN_FILENO))
 write(STDOUT_FILENO, "\n", 1);
 break;
@@ -33,10 +32,7 @@ if (line[nread - 1] == '\n')
 line[nread - 1] = '\0';
 
 if (strcmp(line, "exit") == 0)
-{
-free(line);
-return;
-}
+break;
 
 if (strcmp(line, "env") == 0)
 {
@@ -62,10 +58,15 @@ continue;
 
 if (strchr(argv[0], '/') == NULL)
 {
-char *path = getenv("PATH");
-char *dir = strtok(path, ":");
-char full_path[1024];
-int found = 0;
+path = getenv("PATH");
+if (path == NULL)
+{
+perror("getenv");
+continue;
+}
+found = 0;
+path = strdup(path);
+dir = strtok(path, ":");
 
 while (dir)
 {
@@ -78,6 +79,8 @@ break;
 }
 dir = strtok(NULL, ":");
 }
+free(path);
+
 if (!found)
 {
 perror(argv[0]);
@@ -110,5 +113,6 @@ exit(EXIT_FAILURE);
 else
 wait(NULL);
 }
+
 free(line);
 }
