@@ -4,15 +4,19 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <errno.h>
+
+extern char **environ;
 
 void run_shell(void)
 {
 char *line = NULL;
 size_t len = 0;
 ssize_t nread;
-char *command;
 pid_t child_pid;
-char *argv[2];
+char *argv[50];
+int i;
+char *token;
 
 while (1)
 {
@@ -30,11 +34,17 @@ break;
 if (line[nread - 1] == '\n')
 line[nread - 1] = '\0';
 
-command = strtok(line, " ");
-while (command)
-{
-if (strcmp(command, "exit") == 0)
+if (strcmp(line, "exit") == 0)
 break;
+
+i = 0;
+token = strtok(line, " ");
+while (token != NULL)
+{
+argv[i++] = token;
+token = strtok(NULL, " ");
+}
+argv[i] = NULL;
 
 child_pid = fork();
 if (child_pid == -1)
@@ -45,18 +55,15 @@ continue;
 
 if (child_pid == 0)
 {
-argv[0] = command;
-argv[1] = NULL;
 if (execve(argv[0], argv, environ) == -1)
 {
-perror(argv[0]);
+fprintf(stderr, "%s: %s\n", argv[0], strerror(errno));
 exit(EXIT_FAILURE);
 }
 }
 else
+{
 wait(NULL);
-
-command = strtok(NULL, " ");
 }
 }
 
