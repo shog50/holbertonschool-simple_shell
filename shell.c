@@ -4,19 +4,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
-#include <errno.h>
-
-extern char **environ;
 
 void run_shell(void)
 {
 char *line = NULL;
 size_t len = 0;
 ssize_t nread;
+char *command;
 pid_t child_pid;
-char *argv[50];
-int i;
-char *token;
+char *argv[2];
 
 while (1)
 {
@@ -34,16 +30,10 @@ break;
 if (line[nread - 1] == '\n')
 line[nread - 1] = '\0';
 
-i = 0;
-token = strtok(line, " ");
-while (token != NULL)
+command = strtok(line, " ");
+while (command)
 {
-argv[i++] = token;
-token = strtok(NULL, " ");
-}
-argv[i] = NULL;
-
-if (strcmp(argv[0], "exit") == 0)
+if (strcmp(command, "exit") == 0)
 break;
 
 child_pid = fork();
@@ -55,8 +45,8 @@ continue;
 
 if (child_pid == 0)
 {
-if (strcmp(argv[0], "./hbtn_ls") == 0 && argv[1] != NULL)
-{
+argv[0] = command;
+argv[1] = NULL;
 if (execve(argv[0], argv, environ) == -1)
 {
 perror(argv[0]);
@@ -64,14 +54,9 @@ exit(EXIT_FAILURE);
 }
 }
 else
-{
-fprintf(stderr, "%s: command not found\n", argv[0]);
-exit(EXIT_FAILURE);
-}
-}
-else
-{
 wait(NULL);
+
+command = strtok(NULL, " ");
 }
 }
 
