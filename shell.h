@@ -8,5 +8,9 @@
 void run_shell(void);
 ssize_t _getline(char **lineptr, size_t *n);
 extern char **environ;
+/* shell.h */
+int _strcmp(const char *s1, const char *s2);
+/* shell.h */
+char *_strchr(const char *s, int c);
 
 #endif /* SHELL_H */
