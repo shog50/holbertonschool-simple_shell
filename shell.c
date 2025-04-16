@@ -42,6 +42,13 @@ free(line);
 exit(0);
 }
 
+if (strcmp(line, "env") == 0)
+{
+for (i = 0; environ[i] != NULL; i++)
+printf("%s\n", environ[i]);
+continue;
+}
+
 if (line[0] == '\0')
 continue;
 
