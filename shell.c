@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 #define PROMPT "#cisfun$ "
 #define BUFSIZE 1024
@@ -12,6 +13,7 @@ extern char **environ;
 
 void execute_command(char *command);
 int is_interactive(void);
+int is_only_spaces(const char *command);
 
 int main(void)
 {
@@ -35,6 +37,9 @@ exit(EXIT_SUCCESS);
 
 command[n_read - 1] = '\0';
 
+if (is_only_spaces(command))
+continue;
+
 execute_command(command);
 }
 
@@ -46,14 +51,10 @@ void execute_command(char *command)
 {
 pid_t pid;
 int status;
-char *argv[3];
+char *argv[2];
 
-char *exec = strtok(command, " ");
-char *arg = strtok(NULL, " ");
-
-argv[0] = exec;
-argv[1] = arg;
-argv[2] = NULL;
+argv[0] = command;
+argv[1] = NULL;
 
 pid = fork();
 if (pid == -1)
@@ -61,7 +62,7 @@ return;
 
 if (pid == 0)
 {
-if (execve(argv[0], argv, environ) == -1)
+if (execve(command, argv, environ) == -1)
 {
 perror("./hsh");
 exit(EXIT_FAILURE);
@@ -78,5 +79,16 @@ waitpid(pid, &status, WUNTRACED);
 int is_interactive(void)
 {
 return isatty(STDIN_FILENO);
+}
+
+int is_only_spaces(const char *command)
+{
+while (*command)
+{
+if (!isspace(*command))
+return 0;
+command++;
+}
+return 1;
 }
 
