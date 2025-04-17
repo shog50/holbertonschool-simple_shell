@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 #define PROMPT "#cisfun$ "
 #define BUFSIZE 1024
@@ -12,6 +13,7 @@ extern char **environ;
 
 void execute_command(char *command);
 int is_interactive(void);
+void trim_spaces(char *str);
 
 int main(void)
 {
@@ -21,13 +23,11 @@ ssize_t n_read;
 
 while (1)
 {
-/* Display prompt only in interactive mode */
 if (is_interactive())
 write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
 
-/* Read command from stdin */
 n_read = getline(&command, &bufsize, stdin);
-if (n_read == -1) /* Handle EOF (Ctrl+D) */
+if (n_read == -1)
 {
 free(command);
 if (is_interactive())
@@ -38,7 +38,13 @@ exit(EXIT_SUCCESS);
 /* Remove newline character */
 command[n_read - 1] = '\0';
 
-/* Execute the command */
+/* Trim spaces */
+trim_spaces(command);
+
+/* Skip empty commands */
+if (command[0] == '\0')
+continue;
+
 execute_command(command);
 }
 
@@ -78,5 +84,32 @@ waitpid(pid, &status, WUNTRACED);
 int is_interactive(void)
 {
 return isatty(STDIN_FILENO);
+}
+
+/* Function to trim leading, trailing, and multiple internal spaces */
+void trim_spaces(char *str)
+{
+char *start, *end, *dst;
+
+/* Trim leading spaces */
+start = str;
+while (isspace(*start))
+start++;
+
+/* Trim trailing spaces */
+end = start + strlen(start) - 1;
+while (end > start && isspace(*end))
+end--;
+*(end + 1) = '\0';
+
+/* Remove extra spaces in between */
+dst = str;
+while (*start)
+{
+if (!isspace(*start) || (dst > str && !isspace(*(dst - 1))))
+*dst++ = *start;
+start++;
+}
+*dst = '\0';
 }
 
