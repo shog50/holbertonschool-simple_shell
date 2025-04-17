@@ -5,57 +5,59 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#define PROMPT "#cisfun$ "
+#define BUFSIZE 1024
+
 extern char **environ;
 
-void run_shell(void)
+void execute_command(char *command);
+
+int main(void)
 {
-char *line = NULL;
-size_t len = 0;
-ssize_t nread;
-pid_t child_pid;
-int status;
+char *command = NULL;
+size_t bufsize = 0;
+ssize_t n_read;
 
 while (1)
 {
-if (isatty(STDIN_FILENO))
-write(STDOUT_FILENO, "#cisfun$ ", 9);
-
-nread = getline(&line, &len, stdin);
-
-if (nread == -1)
+write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
+n_read = getline(&command, &bufsize, stdin);
+if (n_read == -1)
 {
-if (isatty(STDIN_FILENO))
+free(command);
 write(STDOUT_FILENO, "\n", 1);
-free(line);
-exit(0);
+exit(EXIT_SUCCESS);
+}
+command[n_read - 1] = '\0';
+execute_command(command);
+}
+free(command);
+return (0);
 }
 
-if (line[nread - 1] == '\n')
-line[nread - 1] = '\0';
-
-if (strlen(line) == 0)
-continue;
-
-child_pid = fork();
-
-if (child_pid == -1)
+void execute_command(char *command)
 {
-perror("fork");
-continue;
-}
+pid_t pid;
+int status;
+char *argv[2];
 
-if (child_pid == 0)
+argv[0] = command;
+argv[1] = NULL;
+
+pid = fork();
+if (pid == -1)
+return;
+
+if (pid == 0)
 {
-if (execve(line, &line, environ) == -1)
-{
-perror(line);
-exit(1);
-}
+if (execve(command, argv, environ) == -1)
+exit(EXIT_FAILURE);
 }
 else
 {
-wait(&status);
-}
+do {
+waitpid(pid, &status, WUNTRACED);
+} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 }
 }
 
