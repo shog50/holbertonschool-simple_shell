@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <ctype.h>
 
 #define PROMPT "#cisfun$ "
 #define BUFSIZE 1024
@@ -13,55 +12,38 @@ extern char **environ;
 
 void execute_command(char *command);
 int is_interactive(void);
-void trim_spaces(char *str);
-void process_commands(char *commands);
 
 int main(void)
 {
-char *commands = NULL;
+char *command = NULL;
 size_t bufsize = 0;
 ssize_t n_read;
 
 while (1)
 {
+/* Display prompt only in interactive mode */
 if (is_interactive())
 write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
 
-n_read = getline(&commands, &bufsize, stdin);
-if (n_read == -1)
+/* Read command from stdin */
+n_read = getline(&command, &bufsize, stdin);
+if (n_read == -1) /* Handle EOF (Ctrl+D) */
 {
-free(commands);
+free(command);
 if (is_interactive())
 write(STDOUT_FILENO, "\n", 1);
 exit(EXIT_SUCCESS);
 }
 
 /* Remove newline character */
-commands[n_read - 1] = '\0';
+command[n_read - 1] = '\0';
 
-/* Trim spaces */
-trim_spaces(commands);
-
-/* Skip empty input */
-if (commands[0] == '\0')
-continue;
-
-/* Process commands (handle multiple commands separated by spaces) */
-process_commands(commands);
-}
-
-free(commands);
-return (0);
-}
-
-void process_commands(char *commands)
-{
-char *command = strtok(commands, " ");
-while (command != NULL)
-{
+/* Execute the command */
 execute_command(command);
-command = strtok(NULL, " ");
 }
+
+free(command);
+return (0);
 }
 
 void execute_command(char *command)
@@ -96,32 +78,5 @@ waitpid(pid, &status, WUNTRACED);
 int is_interactive(void)
 {
 return isatty(STDIN_FILENO);
-}
-
-/* Function to trim leading, trailing, and multiple internal spaces */
-void trim_spaces(char *str)
-{
-char *start, *end, *dst;
-
-/* Trim leading spaces */
-start = str;
-while (isspace(*start))
-start++;
-
-/* Trim trailing spaces */
-end = start + strlen(start) - 1;
-while (end > start && isspace(*end))
-end--;
-*(end + 1) = '\0';
-
-/* Remove extra spaces in between */
-dst = str;
-while (*start)
-{
-if (!isspace(*start) || (dst > str && !isspace(*(dst - 1))))
-*dst++ = *start;
-start++;
-}
-*dst = '\0';
 }
 
