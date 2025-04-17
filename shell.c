@@ -51,10 +51,14 @@ void execute_command(char *command)
 {
 pid_t pid;
 int status;
-char *argv[2];
+char *argv[3];
 
-argv[0] = command;
-argv[1] = NULL;
+char *exec = strtok(command, " ");
+char *arg = strtok(NULL, " ");
+
+argv[0] = exec;
+argv[1] = arg;
+argv[2] = NULL;
 
 pid = fork();
 if (pid == -1)
@@ -62,7 +66,7 @@ return;
 
 if (pid == 0)
 {
-if (execve(command, argv, environ) == -1)
+if (execve(argv[0], argv, environ) == -1)
 {
 perror("./hsh");
 exit(EXIT_FAILURE);
