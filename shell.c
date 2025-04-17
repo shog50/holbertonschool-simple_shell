@@ -6,9 +6,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+extern char **environ;
+
 /**
- * run_shell - Runs the custom shell
- */
+* run_shell - Runs the custom shell
+*/
 void run_shell(void)
 {
 char *line = NULL, *token = NULL, *path = NULL, *dir = NULL;
@@ -31,6 +33,7 @@ write(STDOUT_FILENO, "\n", 1);
 free(line);
 exit(last_status);
 }
+
 if (line[nread - 1] == '\n')
 line[nread - 1] = '\0';
 
@@ -70,6 +73,7 @@ continue;
 path = strdup(path);
 if (!path)
 continue;
+
 dir = strtok(path, ":");
 found = 0;
 while (dir)
@@ -77,13 +81,14 @@ while (dir)
 snprintf(full_path, sizeof(full_path), "%s/%s", dir, argv[0]);
 if (access(full_path, X_OK) == 0)
 {
-argv[0] = full_path;
+argv[0] = strdup(full_path);
 found = 1;
 break;
 }
 dir = strtok(NULL, ":");
 }
 free(path);
+
 if (!found)
 {
 perror(argv[0]);
@@ -104,6 +109,7 @@ if (child_pid == -1)
 perror("fork");
 continue;
 }
+
 if (child_pid == 0)
 {
 if (execve(argv[0], argv, environ) == -1)
@@ -119,3 +125,10 @@ last_status = WIFEXITED(status) ? WEXITSTATUS(status) : 2;
 }
 }
 }
+
+int main(void)
+{
+    run_shell();
+    return 0;
+}
+

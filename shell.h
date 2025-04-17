@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stddef.h>
 #include <string.h>
+
 void run_shell(void);
 ssize_t _getline(char **lineptr, size_t *n);
 extern char **environ;
