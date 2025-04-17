@@ -1,69 +1,121 @@
-#include <stdio.h>
+#include "shell.h"
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
+#include <stdio.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
-#define MAX_INPUT_SIZE 1024
-
 /**
-* main - Simple Shell implementation
-* @argc: Number of arguments
-* @argv: Array of argument strings
-*
-* Return: Always 0 (Success)
+* run_shell - Runs the custom shell
 */
-int main(int argc, char *argv[])
+void run_shell(void)
 {
-char *input = NULL;
+char *line = NULL, *token = NULL, *path = NULL, *dir = NULL;
+char *argv[64], full_path[1024];
 size_t len = 0;
 ssize_t nread;
-char *token;
-char *delim = " \t\r\n\a";
-pid_t pid;
-int status;
-
-(void)argc;
-(void)argv;
-
+pid_t child_pid;
+int i, found, status, last_status = 0;
 
 while (1)
 {
+if (isatty(STDIN_FILENO))
+write(STDOUT_FILENO, "$ ", 2);
 
-printf("$ ");
-nread = getline(&input, &len, stdin);
+nread = _getline(&line, &len);
 if (nread == -1)
 {
-if (feof(stdin))
-break;
-perror("getline");
-exit(EXIT_FAILURE);
+if (isatty(STDIN_FILENO))
+write(STDOUT_FILENO, "\n", 1);
+free(line);
+exit(last_status);
+}
+if (line[nread - 1] == '\n')
+line[nread - 1] = '\0';
+
+if (strcmp(line, "exit") == 0)
+{
+free(line);
+exit(last_status);
 }
 
-
-token = strtok(input, delim);
-if (token == NULL)
+if (strcmp(line, "env") == 0)
+{
+for (i = 0; environ[i]; i++)
+{
+write(STDOUT_FILENO, environ[i], strlen(environ[i]));
+write(STDOUT_FILENO, "\n", 1);
+}
 continue;
-pid = fork();
-if (pid == 0)
-{
-if (execve(token, &token, NULL) == -1)
-{
-perror("Error executing command");
-exit(EXIT_FAILURE);
-}
-}
-else if (pid < 0)
-{
-perror("Error creating child process");
-exit(EXIT_FAILURE);
-}
-else 
-{
-waitpid(pid, &status, 0);
-}
 }
 
-free(input);
-return (0);
+i = 0;
+token = strtok(line, " ");
+while (token && i < 63)
+{
+argv[i++] = token;
+token = strtok(NULL, " ");
+}
+argv[i] = NULL;
+
+if (argv[0] == NULL)
+continue;
+
+if (strchr(argv[0], '/') == NULL)
+{
+path = getenv("PATH");
+if (!path)
+continue;
+path = strdup(path);
+if (!path)
+continue;
+dir = strtok(path, ":");
+found = 0;
+while (dir)
+{
+snprintf(full_path, sizeof(full_path), "%s/%s", dir, argv[0]);
+if (access(full_path, X_OK) == 0)
+{
+argv[0] = full_path;
+found = 1;
+break;
+}
+dir = strtok(NULL, ":");
+}
+free(path);
+if (!found)
+{
+perror(argv[0]);
+last_status = 127;
+continue;
+}
+}
+else if (access(argv[0], X_OK) != 0)
+{
+perror(argv[0]);
+last_status = 127;
+continue;
+}
+
+child_pid = fork();
+if (child_pid == -1)
+{
+perror("fork");
+continue;
+}
+if (child_pid == 0)
+{
+if (execve(argv[0], argv, environ) == -1)
+{
+perror(argv[0]);
+exit(2);
+}
+}
+else
+{
+wait(&status);
+last_status = WIFEXITED(status) ? WEXITSTATUS(status) : 2;
+}
+}
 }
