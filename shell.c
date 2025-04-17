@@ -14,10 +14,11 @@ extern char **environ;
 void execute_command(char *command);
 int is_interactive(void);
 void trim_spaces(char *str);
+void process_commands(char *commands);
 
 int main(void)
 {
-char *command = NULL;
+char *commands = NULL;
 size_t bufsize = 0;
 ssize_t n_read;
 
@@ -26,30 +27,41 @@ while (1)
 if (is_interactive())
 write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
 
-n_read = getline(&command, &bufsize, stdin);
+n_read = getline(&commands, &bufsize, stdin);
 if (n_read == -1)
 {
-free(command);
+free(commands);
 if (is_interactive())
 write(STDOUT_FILENO, "\n", 1);
 exit(EXIT_SUCCESS);
 }
 
 /* Remove newline character */
-command[n_read - 1] = '\0';
+commands[n_read - 1] = '\0';
 
 /* Trim spaces */
-trim_spaces(command);
+trim_spaces(commands);
 
-/* Skip empty commands */
-if (command[0] == '\0')
+/* Skip empty input */
+if (commands[0] == '\0')
 continue;
 
-execute_command(command);
+/* Process commands (handle multiple commands separated by spaces) */
+process_commands(commands);
 }
 
-free(command);
+free(commands);
 return (0);
+}
+
+void process_commands(char *commands)
+{
+char *command = strtok(commands, " ");
+while (command != NULL)
+{
+execute_command(command);
+command = strtok(NULL, " ");
+}
 }
 
 void execute_command(char *command)
