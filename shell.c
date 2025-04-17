@@ -12,6 +12,7 @@ extern char **environ;
 
 void execute_command(char *command);
 int is_interactive(void);
+void process_multiple_commands(char *command);
 
 int main(void)
 {
@@ -21,13 +22,11 @@ ssize_t n_read;
 
 while (1)
 {
-/* Display prompt only in interactive mode */
 if (is_interactive())
 write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
 
-/* Read command from stdin */
 n_read = getline(&command, &bufsize, stdin);
-if (n_read == -1) /* Handle EOF (Ctrl+D) */
+if (n_read == -1)
 {
 free(command);
 if (is_interactive())
@@ -35,15 +34,23 @@ write(STDOUT_FILENO, "\n", 1);
 exit(EXIT_SUCCESS);
 }
 
-/* Remove newline character */
 command[n_read - 1] = '\0';
 
-/* Execute the command */
-execute_command(command);
+process_multiple_commands(command);
 }
 
 free(command);
 return (0);
+}
+
+void process_multiple_commands(char *commands)
+{
+char *command = strtok(commands, " ");
+while (command != NULL)
+{
+execute_command(command);
+command = strtok(NULL, " ");
+}
 }
 
 void execute_command(char *command)
