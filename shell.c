@@ -17,8 +17,9 @@ int i, found, status, last_status = 0;
 
 while (1)
 {
-if (isatty(STDIN_FILENO))
+if (isatty(STDIN_FILENO)) {
 write(STDOUT_FILENO, "$ ", 2);
+}
 
 nread = _getline(&line, &len);
 if (nread == -1)
@@ -29,10 +30,8 @@ free(line);
 exit(last_status);
 }
 
-
 if (line[nread - 1] == '\n')
 line[nread - 1] = '\0';
-
 
 if (strlen(line) == 0 || strspn(line, " \t\n") == strlen(line))
 continue;
