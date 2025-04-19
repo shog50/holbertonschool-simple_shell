@@ -2,13 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "shell.h"
+#include <sys/wait.h>
 
-/**
-* find_command - Search for a command in PATH
-* @command: the command to find
-* Return: full path if found, or NULL
-*/
+extern char **environ;
+
 char *find_command(char *command)
 {
 char *path_env = NULL;
@@ -45,5 +42,43 @@ dir = strtok(NULL, ":");
 
 free(path_copy);
 return (NULL);
+}
+
+void execute_command(char *command)
+{
+pid_t pid;
+int status;
+
+pid = fork();
+if (pid == 0)
+{
+char **argv = malloc(2 * sizeof(char *));
+if (argv == NULL)
+{
+perror("malloc");
+exit(EXIT_FAILURE);
+}
+
+argv[0] = command;
+argv[1] = NULL;
+
+execve(command, argv, environ);
+perror("execve");
+free(argv);
+exit(EXIT_FAILURE);
+}
+else if (pid < 0)
+{
+perror("fork");
+}
+else
+{
+waitpid(pid, &status, 0);
+}
+}
+
+int is_interactive(void)
+{
+return isatty(STDIN_FILENO);
 }
 

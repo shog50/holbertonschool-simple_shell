@@ -16,5 +16,8 @@ int _strcmp(const char *s1, const char *s2);
 char *_strchr(const char *s, int c);
 char *find_command(char *command);
 int has_path_env(void);
+void execute_command(char *command);
+int is_interactive(void);
+
 
 #endif /* SHELL_H */
