@@ -5,43 +5,51 @@
 #include <sys/wait.h>
 #include "shell.h"
 
-extern char **environ;
+#define MAX_INPUT 1024
+#define MAX_ARGS 64
 
 /**
-* main - Simple shell main loop
-*
+* main - Simple shell
 * Return: Always 0
 */
 int main(void)
 {
-char *line = NULL, *token, *cmd_path;
-size_t len = 0;
-ssize_t read;
-char *args[64];
-int i;
+char input[MAX_INPUT];
+char *args[MAX_ARGS];
+char *token;
 pid_t pid;
+int status;
+char *cmd_path;
 
 while (1)
 {
 printf(":) ");
-read = getline(&line, &len, stdin);
-if (read == -1)
+if (fgets(input, MAX_INPUT, stdin) == NULL)
+{
+printf("\n");
 break;
+}
 
-line[strcspn(line, "\n")] = '\0';  /* remove newline */
+if (input[0] == '\n')
+continue;
 
-token = strtok(line, " ");
-i = 0;
-while (token)
+input[strcspn(input, "\n")] = '\0'; /* remove newline */
+
+/* split input into args */
+int i = 0;
+token = strtok(input, " ");
+while (token && i < MAX_ARGS - 1)
 {
 args[i++] = token;
 token = strtok(NULL, " ");
 }
 args[i] = NULL;
 
-if (args[0] == NULL)
-continue;
+/* handle "exit" */
+if (strcmp(args[0], "exit") == 0)
+break;
 
+/* absolute or relative path */
 if (access(args[0], X_OK) == 0)
 {
 cmd_path = args[0];
@@ -65,13 +73,11 @@ exit(EXIT_FAILURE);
 }
 else
 {
-wait(NULL);
+waitpid(pid, &status, 0);
 if (cmd_path != args[0])
 free(cmd_path);
 }
 }
-
-free(line);
 return (0);
 }
 
