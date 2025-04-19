@@ -14,5 +14,6 @@ extern char **environ;
 int _strcmp(const char *s1, const char *s2);
 /* shell.h */
 char *_strchr(const char *s, int c);
+char *find_command(char *command);
 
 #endif /* SHELL_H */
