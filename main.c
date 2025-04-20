@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "shell.h"
+
+#define PROMPT "#cisfun$ "
+#define BUFSIZE 1024
 
 int main(void)
 {
@@ -12,28 +16,22 @@ ssize_t n_read;
 while (1)
 {
 if (is_interactive())
-{
-printf(":) ");
-}
+write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
 
 n_read = getline(&command, &bufsize, stdin);
 if (n_read == -1)
 {
 free(command);
-break;
+if (is_interactive())
+write(STDOUT_FILENO, "\n", 1);
+exit(EXIT_SUCCESS);
 }
 
-command[strcspn(command, "\n")] = '\0';
-
-if (strcmp(command, "exit") == 0)
-{
-free(command);
-break;
-}
-
+command[n_read - 1] = '\0';
 execute_command(command);
 }
 
-return 0;
+free(command);
+return (0);
 }
 
