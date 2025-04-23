@@ -29,6 +29,6 @@ echo "/bin/ls" | ./hsh
 Exit the shell:
 exit
 
-Authors
+## Authors
 Rawan Albaraiki
 Shouq Alosaimi
