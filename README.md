@@ -30,5 +30,5 @@ Exit the shell:
 exit
 
 ## Authors
-Rawan Albaraiki
-Shouq Alosaimi
+- Rawan Albaraiki
+- Shouq Alosaimi
