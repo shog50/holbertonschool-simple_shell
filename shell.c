@@ -146,7 +146,7 @@ if (access(argv[0], X_OK) != 0)
 full_path = find_command(argv[0]);
 if (!full_path)
 {
-perror("./hsh");
+perror(argv[0]);
 return;
 }
 argv[0] = full_path;
@@ -167,7 +167,7 @@ return;
 if (pid == 0)
 {
 execve(full_path, argv, environ);
-perror("./hsh");
+perror(argv[o]);
 exit(EXIT_FAILURE);
 }
 else
@@ -175,9 +175,8 @@ else
 waitpid(pid, &status, 0);
 }
 
-if (full_path != argv[0])
-free(full_path);
-}
+if (full_path != NULL && full_path != argv[0])
+ free(full_path);
 
 void run_shell(void)
 {
