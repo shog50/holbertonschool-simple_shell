@@ -15,22 +15,3 @@ int _strcmp(const char *s1, const char *s2)
     }
     return (*(unsigned char *)s1 - *(unsigned char *)s2);
 }
-
-/**
- * _strchr - Locate character in string
- * @s: string to search
- * @c: character to find
- * Return: pointer to first occurrence or NULL
- */
-char *_strchr(const char *s, int c)
-{
-    while (*s)
-    {
-        if (*s == (char)c)
-            return (char *)s;
-        s++;
-    }
-    if (c == '\0')
-        return (char *)s;
-    return NULL;
-}

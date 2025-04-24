@@ -18,6 +18,6 @@ char *find_command(char *command);
 int has_path_env(void);
 void execute_command(char *command);
 int is_interactive(void);
-
+char *_getpath(void);
 
 #endif /* SHELL_H */
