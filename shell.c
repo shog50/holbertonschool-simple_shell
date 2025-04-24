@@ -167,7 +167,7 @@ return;
 if (pid == 0)
 {
 execve(full_path, argv, environ);
-perror(argv[o]);
+perror(argv[0]);
 exit(EXIT_FAILURE);
 }
 else
