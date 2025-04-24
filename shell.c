@@ -5,6 +5,7 @@
 
 int is_interactive(void)
 {
+write(STDOUT_FILENO, "#cisfun$ ", 10);
 return (isatty(STDIN_FILENO));
 }
 
@@ -76,7 +77,7 @@ int i = 0, len = 0;
 
 for (i = 0; environ[i]; i++)
 {
-if (_strcmp(environ[i], "PATH=") == 0)
+if (strncmp(environ[i], "PATH=", 5) == 0)
 {
 path = environ[i] + 5;
 break;
@@ -90,13 +91,9 @@ copy = _strdup(path);
 if (!copy)
 return (NULL);
 
-dir = copy;
+dir = strtok(copy, ":");
 while (dir)
 {
-char *next = _strchr(dir, ':');
-if (next)
-*next = '\0';
-
 len = _strlen(dir) + _strlen(command) + 2;
 full = malloc(len);
 if (!full)
@@ -104,29 +101,23 @@ if (!full)
 free(copy);
 return (NULL);
 }
-
 full[0] = '\0';
 _strcat(full, dir);
 _strcat(full, "/");
 _strcat(full, command);
-
 if (access(full, X_OK) == 0)
 {
 free(copy);
 return (full);
 }
-
 free(full);
-
-if (!next)
-break;
-dir = next + 1;
+dir = strtok(NULL, ":");
 }
 
 free(copy);
 return (NULL);
 }
-
+char *argv[MAX_ARGS];
 void execute_command(char *command)
 {
 pid_t pid;
@@ -134,26 +125,17 @@ int status;
 char *argv[MAX_ARGS];
 char *token;
 int i = 0;
-char *full_path;
+char *full_path = NULL;
 
 if (!command || command[0] == '\0')
 return;
 
-token = command;
-while (*token == ' ')
-token++;
-
-argv[i++] = token;
-
-while ((token = _strchr(token, ' ')))
+token = strtok(command, " ");
+while (token && i < MAX_ARGS - 1)
 {
-*token = '\0';
-token++;
-while (*token == ' ')
-token++;
 argv[i++] = token;
+token = strtok(NULL, " ");
 }
-
 argv[i] = NULL;
 
 if (!argv[0])
@@ -164,7 +146,8 @@ if (access(argv[0], X_OK) != 0)
 full_path = find_command(argv[0]);
 if (!full_path)
 {
-write(STDERR_FILENO, "./hsh: No such file or directory\n", _strlen("./hsh: No such file or directory\n"));
+write(STDERR_FILENO, argv[0], _strlen(argv[0]));
+write(STDERR_FILENO, ": not found\n", 13);
 return;
 }
 argv[0] = full_path;
@@ -186,7 +169,7 @@ return;
 if (pid == 0)
 {
 execve(full_path, argv, environ);
-perror("./hsh");
+perror(argv[0]);
 exit(EXIT_FAILURE);
 }
 else
@@ -207,7 +190,7 @@ ssize_t nread;
 while (1)
 {
 if (is_interactive())
-write(STDOUT_FILENO, "$ ", 2);
+write(STDOUT_FILENO, "#cisfun$ ", 10);
 
 nread = _getline(&line, &len);
 if (nread == -1)
