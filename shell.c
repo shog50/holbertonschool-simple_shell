@@ -164,7 +164,7 @@ if (access(argv[0], X_OK) != 0)
 full_path = find_command(argv[0]);
 if (!full_path)
 {
-write(STDERR_FILENO, "./hsh: No such file or directory\n", 35);
+write(STDERR_FILENO, "./hsh: No such file or directory\n", _strlen("./hsh: No such file or directory\n"));
 return;
 }
 argv[0] = full_path;
