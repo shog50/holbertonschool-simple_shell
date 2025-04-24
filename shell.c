@@ -90,9 +90,13 @@ copy = _strdup(path);
 if (!copy)
 return (NULL);
 
-dir = strtok(copy, ":");
+dir = copy;
 while (dir)
 {
+char *next = _strchr(dir, ':');
+if (next)
+*next = '\0';
+
 len = _strlen(dir) + _strlen(command) + 2;
 full = malloc(len);
 if (!full)
@@ -100,6 +104,7 @@ if (!full)
 free(copy);
 return (NULL);
 }
+
 full[0] = '\0';
 _strcat(full, dir);
 _strcat(full, "/");
@@ -110,8 +115,12 @@ if (access(full, X_OK) == 0)
 free(copy);
 return (full);
 }
+
 free(full);
-dir = strtok(NULL, ":");
+
+if (!next)
+break;
+dir = next + 1;
 }
 
 free(copy);
@@ -130,12 +139,21 @@ char *full_path;
 if (!command || command[0] == '\0')
 return;
 
-token = strtok(command, " ");
-while (token && i < MAX_ARGS - 1)
-{
+token = command;
+while (*token == ' ')
+token++;
+
 argv[i++] = token;
-token = strtok(NULL, " ");
+
+while ((token = _strchr(token, ' ')))
+{
+*token = '\0';
+token++;
+while (*token == ' ')
+token++;
+argv[i++] = token;
 }
+
 argv[i] = NULL;
 
 if (!argv[0])
@@ -146,7 +164,7 @@ if (access(argv[0], X_OK) != 0)
 full_path = find_command(argv[0]);
 if (!full_path)
 {
-perror(argv[0]);
+write(STDERR_FILENO, "./hsh: No such file or directory\n", 35);
 return;
 }
 argv[0] = full_path;
@@ -160,6 +178,7 @@ pid = fork();
 if (pid == -1)
 {
 perror("fork");
+if (full_path != argv[0])
 free(full_path);
 return;
 }
@@ -167,7 +186,7 @@ return;
 if (pid == 0)
 {
 execve(full_path, argv, environ);
-perror(argv[0]);
+perror("./hsh");
 exit(EXIT_FAILURE);
 }
 else
@@ -175,8 +194,9 @@ else
 waitpid(pid, &status, 0);
 }
 
-if (full_path != NULL && full_path != argv[0])
- free(full_path);
+if (full_path != argv[0])
+free(full_path);
+}
 
 void run_shell(void)
 {
