@@ -1,0 +1,46 @@
+.TH hsh 1 "April 2025" "Simple Shell Manual"
+.SH NAME
+hsh \- simple UNIX command line interpreter
+.SH SYNOPSIS
+.B hsh
+.SH DESCRIPTION
+.B hsh
+is a basic shell written in C. It reads user input, parses commands, and executes them using the system's built-in functionalities.
+
+It works in two modes:
+- Interactive: Displays a prompt and waits for input.
+- Non-interactive: Reads commands from standard input.
+
+.SH FEATURES
+- Executes commands with or without arguments
+- Supports command search through the PATH
+- Built-in commands:
+  - exit: exits the shell
+  - env: prints environment variables
+- Handles command not found errors with proper messages
+
+.SH USAGE
+Interactive mode:
+.EX
+$ ./hsh
+($) /bin/ls
+file1.c file2.c hsh
+($) exit
+.EE
+
+Non-interactive mode:
+.EX
+$ echo "/bin/ls" | ./hsh
+file1.c file2.c hsh
+.EE
+
+.SH ERROR HANDLING
+If a command is not found, an error is printed in this format:
+.EX
+./hsh: 1: command_name: not found
+.EE
+
+.SH AUTHORS
+Rawan Albaraiki  
+Shouq Alosaimi
+
