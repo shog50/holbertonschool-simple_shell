@@ -16,8 +16,8 @@ A simple Unix shell that replicates basic functionalities of the /bin/sh shell. 
 ## Installation
 
 Clone the repository:
-git clone https://github.com/shog50/holbertonschool-simple_shell.git
-cd holbertonschool-simple_shell
+- git clone https://github.com/shog50/holbertonschool-simple_shell.git
+- cd holbertonschool-simple_shell
 
 ## Compilation
 
